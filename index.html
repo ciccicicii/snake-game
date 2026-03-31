@@ -188,6 +188,11 @@
             <div class="score-board">
                 <div>得分: <span id="score">0</span></div>
                 <div>最高: <span id="highScore">0</span></div>
+                <div style="margin-left:15px;">
+                    <label style="color:#666;font-size:14px;cursor:pointer;">
+                        <input type="checkbox" id="autoMode" onchange="toggleAutoMode(this.checked)" style="width:16px;height:16px;"> 自动挂机
+                    </label>
+                </div>
             </div>
         </div>
 
@@ -249,6 +254,73 @@
         let gameLoop = null;
         let gameSpeed = 250;
         let isGameRunning = false;
+        let autoMode = false; // 作弊模式
+        let autoLoop = null; // 自动模式定时器
+        
+        // BFS 寻路算法
+        function findPath() {
+            const head = snake[0];
+            const target = food;
+            
+            // BFS
+            const queue = [{ x: head.x, y: head.y, path: [] }];
+            const visited = new Set();
+            visited.add(`${head.x},${head.y}`);
+            
+            while (queue.length > 0) {
+                const current = queue.shift();
+                
+                if (current.x === target.x && current.y === target.y) {
+                    return current.path[0]; // 返回第一步
+                }
+                
+                // 四个方向
+                const directions = [
+                    { dx: 0, dy: -1, dir: 'up' },
+                    { dx: 0, dy: 1, dir: 'down' },
+                    { dx: -1, dy: 0, dir: 'left' },
+                    { dx: 1, dy: 0, dir: 'right' }
+                ];
+                
+                for (const d of directions) {
+                    const nx = current.x + d.dx;
+                    const ny = current.y + d.dy;
+                    const key = `${nx},${ny}`;
+                    
+                    // 检查边界
+                    if (nx < 0 || nx >= GRID_COUNT || ny < 0 || ny >= GRID_COUNT) continue;
+                    
+                    // 检查是否撞到自己
+                    if (snake.some(s => s.x === nx && s.y === ny)) continue;
+                    
+                    // 检查是否访问过（但路径很短时可以走自己的尾巴）
+                    if (visited.has(key)) continue;
+                    
+                    visited.add(key);
+                    queue.push({
+                        x: nx,
+                        y: ny,
+                        path: [...current.path, d.dir]
+                    });
+                }
+            }
+            
+            return null; // 没找到路径
+        }
+        
+        // 自动模式移动
+        function autoMove() {
+            if (!autoMode || !isGameRunning) return;
+            
+            const nextDir = findPath();
+            if (nextDir) {
+                // 不能直接掉头
+                const opposites = { 'up': 'down', 'down': 'up', 'left': 'right', 'right': 'left' };
+                if (opposites[nextDir] !== direction) {
+                    nextDirection = nextDir;
+                }
+            }
+        }
         
         // 显示最高分
         document.getElementById('highScore').textContent = highScore;
@@ -475,6 +547,33 @@
             nextDirection = 'right';
             document.getElementById('score').textContent = score;
             
+            // 获取自动模式状态
+            autoMode = document.getElementById('autoMode').checked;
+            
+            if (gameLoop) clearInterval(gameLoop);
+            gameLoop = setInterval(gameStep, gameSpeed);
+            isGameRunning = true;
+            
+            // 启动自动移动
+            if (autoLoop) clearInterval(autoLoop);
+            if (autoMode) {
+                autoLoop = setInterval(autoMove, 100);
+            }
+            
+            draw();
+        }
+        
+        // 切换自动模式
+        function toggleAutoMode(enabled) {
+            autoMode = enabled;
+            if (enabled && isGameRunning) {
+                if (autoLoop) clearInterval(autoLoop);
+                autoLoop = setInterval(autoMove, 100);
+            } else if (!enabled && autoLoop) {
+                clearInterval(autoLoop);
+            }
+        }
+            
             if (gameLoop) clearInterval(gameLoop);
             gameLoop = setInterval(gameStep, gameSpeed);
             isGameRunning = true;
@@ -486,6 +585,7 @@
         function gameOver() {
             isGameRunning = false;
             clearInterval(gameLoop);
+            if (autoLoop) clearInterval(autoLoop);
             combo = 0; // 重置连击
             
             if (score > highScore) {
