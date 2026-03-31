@@ -402,8 +402,9 @@
         
         // 头像特效
         function showAvatarEffect() {
-            // 连击文字
+            // 连击文字 - 改成从1开始显示
             const texts = {
+                1: 'Nice!',
                 2: 'man!',
                 3: 'Mamba out',
                 4: 'what can I say?',
@@ -424,43 +425,40 @@
             if (text) {
                 const textDiv = document.createElement('div');
                 textDiv.textContent = text;
-                textDiv.style.cssText = 'color:#fff;font-size:36px;font-weight:900;margin-top:20px;text-shadow:3px 3px 6px rgba(0,0,0,0.8);font-family:Arial Black,sans-serif;opacity:0;transform:scale(0.5);';
+                textDiv.style.cssText = 'color:#fff;font-size:32px;font-weight:bold;margin-top:15px;text-shadow:2px 2px 4px rgba(0,0,0,0.8);font-family:Arial,sans-serif;';
                 container.appendChild(textDiv);
             }
             
             document.body.appendChild(container);
             
-            // 动画效果 - 更震撼
+            // 动画效果 - 头像出现
             setTimeout(() => {
                 avatar.style.transition = 'all 0.15s ease-out';
                 avatar.style.width = '180px';
             }, 10);
             
+            // 文字显示
             if (text) {
                 setTimeout(() => {
-                    textDiv.style.transition = 'all 0.2s ease-out';
-                    textDiv.style.opacity = '1';
-                    textDiv.style.transform = 'scale(1)';
-                }, 150);
+                    textDiv.style.transition = 'all 0.15s ease-out';
+                    textDiv.style.transform = 'scale(1.1)';
+                }, 100);
             }
             
+            // 消失
             setTimeout(() => {
-                avatar.style.transition = 'all 0.2s ease-in';
+                avatar.style.transition = 'all 0.3s ease-in';
                 avatar.style.width = '250px';
                 avatar.style.opacity = '0';
-            }, 400);
-            
-            if (text) {
-                setTimeout(() => {
-                    textDiv.style.transition = 'all 0.2s ease-in';
+                if (text) {
+                    textDiv.style.transition = 'all 0.3s ease-in';
                     textDiv.style.opacity = '0';
-                    textDiv.style.transform = 'scale(1.5)';
-                }, 400);
-            }
+                }
+            }, 600);
             
             setTimeout(() => {
                 container.remove();
-            }, 800);
+            }, 1000);
         }
         
         // 开始游戏
