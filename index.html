@@ -375,6 +375,9 @@
                 score += 10;
                 document.getElementById('score').textContent = score;
                 
+                // 显示特效
+                showAvatarEffect();
+                
                 // 每50分加速
                 if (score % 100 === 0 && gameSpeed > 80) {
                     gameSpeed -= 5;
@@ -393,6 +396,29 @@
         // 单步游戏
         function gameStep() {
             update();
+        }
+        
+        // 头像特效
+        function showAvatarEffect() {
+            const avatar = document.createElement('img');
+            avatar.src = 'https://raw.githubusercontent.com/ciccicicii/snake-game/main/images/avatar.jpg';
+            avatar.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);width:120px;border-radius:50%;border:4px solid #27ae60;z-index:9999;pointer-events:none;transition:all 0.3s ease-out;';
+            document.body.appendChild(avatar);
+            
+            // 动画效果
+            setTimeout(() => {
+                avatar.style.transform = 'translate(-50%,-50%) scale(1.5)';
+                avatar.style.opacity = '1';
+            }, 10);
+            
+            setTimeout(() => {
+                avatar.style.transform = 'translate(-50%,-50%) scale(2)';
+                avatar.style.opacity = '0';
+            }, 300);
+            
+            setTimeout(() => {
+                avatar.remove();
+            }, 600);
         }
         
         // 开始游戏
