@@ -245,7 +245,7 @@
         let score = 0;
         let highScore = localStorage.getItem('snakeHighScore') || 0;
         let gameLoop = null;
-        let gameSpeed = 150;
+        let gameSpeed = 250;
         let isGameRunning = false;
         
         // 显示最高分
@@ -375,8 +375,8 @@
                 document.getElementById('score').textContent = score;
                 
                 // 每50分加速
-                if (score % 50 === 0 && gameSpeed > 50) {
-                    gameSpeed -= 10;
+                if (score % 100 === 0 && gameSpeed > 80) {
+                    gameSpeed -= 5;
                     clearInterval(gameLoop);
                     gameLoop = setInterval(gameStep, gameSpeed);
                 }
