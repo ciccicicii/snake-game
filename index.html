@@ -14,7 +14,7 @@
 
         body {
             font-family: 'Segoe UI', 'PingFang SC', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -40,7 +40,7 @@
 
         .header h1 {
             font-size: 28px;
-            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            color: #333;
             margin-bottom: 5px;
         }
 
@@ -52,21 +52,22 @@
         }
 
         .score-board span {
-            color: #00ff88;
+            color: #27ae60;
             font-weight: bold;
         }
 
         .game-wrapper {
             position: relative;
-            background: rgba(0, 0, 0, 0.5);
+            background: #fff;
             border-radius: 15px;
             padding: 10px;
-            box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
 
         #gameCanvas {
             display: block;
-            background: #0a0a15;
+            background: #ffffff;
+            border: 3px solid #333;
             border-radius: 10px;
         }
 
@@ -76,53 +77,52 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(10, 10, 21, 0.95);
+            background: rgba(255, 255, 255, 0.95);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             border-radius: 10px;
-            color: #fff;
+            color: #333;
             text-align: center;
             padding: 20px;
         }
 
         .start-screen h2, .game-over-screen h2 {
             font-size: 32px;
-            color: #00ff88;
+            color: #27ae60;
             margin-bottom: 20px;
-            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
         }
 
         .start-screen p, .game-over-screen p {
             font-size: 18px;
-            color: #aaa;
+            color: #666;
             margin-bottom: 30px;
         }
 
         .final-score {
             font-size: 48px;
-            color: #00ff88;
+            color: #27ae60;
             font-weight: bold;
             margin: 20px 0;
         }
 
         .btn {
-            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-            color: #1a1a2e;
+            background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
+            color: #fff;
             border: none;
             padding: 15px 40px;
             font-size: 20px;
             font-weight: bold;
             border-radius: 30px;
             cursor: pointer;
-            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
         .btn:active {
             transform: scale(0.95);
-            box-shadow: 0 2px 10px rgba(0, 255, 136, 0.3);
+            box-shadow: 0 2px 10px rgba(39, 174, 96, 0.3);
         }
 
         .controls {
@@ -277,11 +277,11 @@
         // 绘制游戏
         function draw() {
             // 清空画布
-            ctx.fillStyle = '#0a0a15';
+            ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             // 绘制网格
-            ctx.strokeStyle = 'rgba(0, 255, 136, 0.05)';
+            ctx.strokeStyle = '#eee';
             for (let i = 0; i <= GRID_COUNT; i++) {
                 ctx.beginPath();
                 ctx.moveTo(i * GRID_SIZE, 0);
@@ -302,8 +302,8 @@
                 food.y * GRID_SIZE + GRID_SIZE / 2,
                 GRID_SIZE / 2
             );
-            foodGradient.addColorStop(0, '#ff6b6b');
-            foodGradient.addColorStop(1, '#ee5a5a');
+            foodGradient.addColorStop(0, '#e74c3c');
+            foodGradient.addColorStop(1, '#c0392b');
             ctx.fillStyle = foodGradient;
             ctx.beginPath();
             ctx.arc(
@@ -321,11 +321,11 @@
                 const alpha = 1 - (index / snake.length) * 0.3;
                 
                 if (isHead) {
-                    ctx.fillStyle = '#00ff88';
-                    ctx.shadowColor = '#00ff88';
-                    ctx.shadowBlur = 10;
+                    ctx.fillStyle = '#27ae60';
+                    ctx.shadowColor = '#27ae60';
+                    ctx.shadowBlur = 5;
                 } else {
-                    ctx.fillStyle = `rgba(0, 255, 136, ${alpha})`;
+                    ctx.fillStyle = `rgba(39, 174, 96, ${alpha})`;
                     ctx.shadowBlur = 0;
                 }
                 
