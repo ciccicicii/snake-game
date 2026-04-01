@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>台球 - 单人练习</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            overflow: hidden;
+        }
+        
+        /* 开始菜单 */
+        #startMenu {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+        }
+        
+        #startMenu.hidden {
+            display: none;
+        }
+        
+        .menu-table {
+            position: relative;
+            width: 90%;
+            max-width: 700px;
+            aspect-ratio: 2;
+            background: #1a472a;
+            border-radius: 15px;
+            box-shadow: 
+                0 20px 60px rgba(0,0,0,0.6),
+                inset 0 0 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+        
+        .menu-table::before {
+            content: '';
+            position: absolute;
+            inset: 15px;
+            border: 18px solid #5c3d28;
+            border-radius: 10px;
+            pointer-events: none;
+        }
+        
+        .menu-ball {
+            position: absolute;
+            border-radius: 50%;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+        }
+        
+        .menu-ball::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 4px;
+            height: 4px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 50%;
+        }
+        
+        .menu-title {
+            font-size: 48px;
+            color: #fff;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .start-btn {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #1a1a2e;
+            border: none;
+            padding: 18px 60px;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(74,222,128,0.4);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(74,222,128,0.5);
+        }
+        
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #4ade80;
+            color: #1a1a2e;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            z-index: 200;
+        }
+        
+        .game-ui {
+            display: none;
+        }
+        
+        .game-ui.active {
+            display: block;
+        }
+        
+        h1 {
+            color: #fff;
+            margin-bottom: 15px;
+            font-size: 28px;
+        }
+        
+        .info-bar {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 15px;
+            color: #fff;
+            font-size: 18px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .info-bar span {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 20px;
+            border-radius: 8px;
+        }
+        
+        #gameCanvas {
+            background: #1a472a;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            cursor: crosshair;
+            touch-action: none;
+        }
+        
+        .tips {
+            color: #888;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        .power-indicator {
+            width: 300px;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+        
+        .power-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4ade80, #f59e0b, #ef4444);
+            transition: width 0.05s;
+        }
+    </style>
+</head>
+<body>
+    <!-- 开始菜单 -->
+    <div id="startMenu">
+        <div class="menu-table" id="menuTable">
+            <!-- JS生成散落小球 -->
+        </div>
+        <h1 class="menu-title">🎱 台球</h1>
+        <button class="start-btn" onclick="startGame()">开始游戏</button>
+    </div>
+    
+    <a href="index.html" class="back-btn">← 返回大厅</a>
+    
+    <!-- 游戏界面 -->
+    <div class="game-ui" id="gameUI">
+        <h1>🎱 台球单人练习</h1>
+        
+        <div class="info-bar">
+            <span>得分: <b id="score">0</b></span>
+            <span id="statusText">目标: 打进所有球</span>
+            <button id="backBtn" onclick="backToMenu()" style="display:none; padding:8px 16px; background:#4ade80; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">重新开始</button>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
+        
+        <div class="power-indicator">
+            <div class="power-fill" id="powerFill"></div>
+        </div>
+        
+        <p class="tips">拖动鼠标/手指瞄准，松开击球</p>
+    </div>
+
+    <script>
+        // 生成菜单页散落小球
+        function createMenuBalls() {
+            const table = document.getElementById('menuTable');
+            const colors = ['#FFD700', '#0000FF', '#FF0000', '#800080', '#FFA500', '#008000', '#800000', '#000000'];
+            
+            for (let i = 0; i < 12; i++) {
+                const ball = document.createElement('div');
+                ball.className = 'menu-ball';
+                
+                const left = 20 + Math.random() * 60;
+                const top = 20 + Math.random() * 60;
+                const size = 12 + Math.random() * 8;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                ball.style.left = left + '%';
+                ball.style.top = top + '%';
+                ball.style.width = size + 'px';
+                ball.style.height = size + 'px';
+                ball.style.background = color === '#000000' ? 'linear-gradient(135deg, #444, #000)' : color;
+                
+                table.appendChild(ball);
+            }
+        }
+        
+        createMenuBalls();
+        
+        // ========== 游戏代码 ==========
+        
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 配置
+        const TABLE_MARGIN = 20;
+        const POCKET_RADIUS = 22;
+        const BALL_RADIUS = 11;
+        const FRICTION = 0.978;
+        const MIN_VELOCITY = 0.08;
+        
+        // 球颜色
+        const BALL_COLORS = {
+            1: '#FFD700', 2: '#0000FF', 3: '#FF0000', 4: '#800080',
+            5: '#FFA500', 6: '#008000', 7: '#800000', 8: '#000000',
+            9: '#FFD700', 10: '#0000FF', 11: '#FF0000', 12: '#800080',
+            13: '#FFA500', 14: '#008000', 15: '#800000'
+        };
+        
+        let balls = [];
+        let cueBall = null;
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let dragEnd = { x: 0, y: 0 };
+        let power = 0;
+        let score = 0;
+        let isFreeBall = false;
+        let cueBallPocketed = false;
+        
+        // 游戏状态
+        let gameStarted = false;
+        
+        // 设置画布大小
+        function resize() {
+            const maxW = Math.min(window.innerWidth - 20, 800);
+            const maxH = window.innerHeight * 0.5;
+            
+            if (maxW / maxH > 2) {
+                canvas.height = maxH;
+                canvas.width = maxH * 2;
+            } else {
+                canvas.width = maxW;
+                canvas.height = maxW / 2;
+            }
+        }
+        
+        resize();
+        window.addEventListener('resize', resize);
+        
+        // 球袋位置
+        function getPockets() {
+            const m = 15;
+            return [
+                { x: m, y: m },
+                { x: canvas.width / 2, y: m - 5 },
+                { x: canvas.width - m, y: m },
+                { x: m, y: canvas.height - m },
+                { x: canvas.width / 2, y: canvas.height - m + 5 },
+                { x: canvas.width - m, y: canvas.height - m }
+            ];
+        }
+        
+        // 球类
+        class Ball {
+            constructor(x, y, num) {
+                this.x = x;
+                this.y = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.num = num;
+                this.radius = BALL_RADIUS;
+                this.pocketed = false;
+            }
+            
+            update() {
+                if (this.pocketed) return;
+                
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                this.vx *= FRICTION;
+                this.vy *= FRICTION;
+                
+                if (Math.abs(this.vx) < MIN_VELOCITY) this.vx = 0;
+                if (Math.abs(this.vy) < MIN_VELOCITY) this.vy = 0;
+                
+                const margin = 20 + this.radius;
+                if (this.x < margin) { this.x = margin; this.vx = -this.vx * 0.85; }
+                if (this.x > canvas.width - margin) { this.x = canvas.width - margin; this.vx = -this.vx * 0.85; }
+                if (this.y < margin) { this.y = margin; this.vy = -this.vy * 0.85; }
+                if (this.y > canvas.height - margin) { this.y = canvas.height - margin; this.vy = -this.vy * 0.85; }
+                
+                const pockets = getPockets();
+                for (const p of pockets) {
+                    const dist = Math.hypot(this.x - p.x, this.y - p.y);
+                    if (dist < POCKET_RADIUS + 4) {
+                        this.pocketed = true;
+                        this.vx = 0;
+                        this.vy = 0;
+                        
+                        if (this.num === 0) {
+                            cueBallPocketed = true;
+                        } else if (this.num !== 8 && this.num !== 0) {
+                            score += 10;
+                            document.getElementById('score').textContent = score;
+                        }
+                    }
+                }
+            }
+            
+            draw() {
+                if (this.pocketed) return;
+                
+                const color = this.num === 0 ? '#fff' : (this.num === 8 ? '#000' : BALL_COLORS[this.num]);
+                const isStripe = this.num > 8;
+                
+                const rotation = (this.x / this.radius) * 0.5;
+                
+                const grad = ctx.createRadialGradient(this.x - 3, this.y - 3, 0, this.x, this.y, this.radius);
+                
+                if (this.num === 0) {
+                    grad.addColorStop(0, '#ffffff');
+                    grad.addColorStop(1, '#cccccc');
+                } else if (isStripe) {
+                    grad.addColorStop(0, '#ffffff');
+                    grad.addColorStop(1, color);
+                } else {
+                    grad.addColorStop(0, lighten(color, 50));
+                    grad.addColorStop(1, color);
+                }
+                
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+                
+                if (isStripe) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = '#fff';
+                    ctx.fill();
+                    ctx.save();
+                    ctx.rotate(rotation);
+                    ctx.fillStyle = color;
+                    ctx.fillRect(-this.radius, -4, this.radius * 2, 8);
+                    ctx.restore();
+                }
+                
+                if (this.num > 0) {
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#000';
+                    ctx.font = 'bold 7px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(this.num, 0, 0.5);
+                } else {
+                    ctx.save();
+                    ctx.rotate(rotation);
+                    ctx.strokeStyle = 'rgba(200,200,200,0.5)';
+                    ctx.lineWidth = 1;
+                    for (let i = 0; i < 3; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(-this.radius * 0.6, -4 + i * 4);
+                        ctx.lineTo(this.radius * 0.6, -4 + i * 4);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                }
+                
+                const highlightGrad = ctx.createRadialGradient(-3, -3, 0, -3, -3, this.radius * 0.4);
+                highlightGrad.addColorStop(0, 'rgba(255,255,255,0.6)');
+                highlightGrad.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.beginPath();
+                ctx.arc(-3, -3, this.radius * 0.4, 0, Math.PI * 2);
+                ctx.fillStyle = highlightGrad;
+                ctx.fill();
+                
+                ctx.restore();
+            }
+            
+            isMoving() {
+                return Math.abs(this.vx) > MIN_VELOCITY || Math.abs(this.vy) > MIN_VELOCITY;
+            }
+        }
+        
+        function lighten(color, percent) {
+            const num = parseInt(color.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = Math.min(255, (num >> 16) + amt);
+            const G = Math.min(255, ((num >> 8) & 0xff) + amt);
+            const B = Math.min(255, (num & 0xff) + amt);
+            return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+        }
+        
+        function initBalls() {
+            balls = [];
+            
+            cueBall = new Ball(canvas.width * 0.25, canvas.height / 2, 0);
+            balls.push(cueBall);
+            
+            const startX = canvas.width * 0.7;
+            const startY = canvas.height / 2;
+            const gap = BALL_RADIUS * 2.1;
+            
+            const order = [1, 9, 2, 10, 8, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15];
+            let idx = 0;
+            
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col <= row; col++) {
+                    const x = startX + row * gap * 0.866;
+                    const y = startY + (col - row / 2) * gap;
+                    balls.push(new Ball(x, y, order[idx]));
+                    idx++;
+                }
+            }
+        }
+        
+        function checkCollisions() {
+            for (let i = 0; i < balls.length; i++) {
+                for (let j = i + 1; j < balls.length; j++) {
+                    const b1 = balls[i];
+                    const b2 = balls[j];
+                    if (b1.pocketed || b2.pocketed) continue;
+                    
+                    const dx = b2.x - b1.x;
+                    const dy = b2.y - b1.y;
+                    const dist = Math.hypot(dx, dy);
+                    
+                    if (dist < BALL_RADIUS * 2 && dist > 0) {
+                        const overlap = BALL_RADIUS * 2 - dist;
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        
+                        b1.x -= overlap * nx * 0.5;
+                        b1.y -= overlap * ny * 0.5;
+                        b2.x += overlap * nx * 0.5;
+                        b2.y += overlap * ny * 0.5;
+                        
+                        const dvx = b1.vx - b2.vx;
+                        const dvy = b1.vy - b2.vy;
+                        const dot = dvx * nx + dvy * ny;
+                        
+                        if (dot > 0) {
+                            const elasticity = 0.95;
+                            b1.vx -= dot * nx * elasticity;
+                            b1.vy -= dot * ny * elasticity;
+                            b2.vx += dot * nx * elasticity;
+                            b2.vy += dot * ny * elasticity;
+                        }
+                    }
+                }
+            }
+        }
+        
+        function drawTable() {
+            const margin = 15;
+            
+            ctx.fillStyle = '#4a3020';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#5c3d28';
+            ctx.fillRect(margin, margin, canvas.width - margin * 2, canvas.height - margin * 2);
+            
+            const innerMargin = margin + 8;
+            ctx.fillStyle = '#1a5c32';
+            ctx.fillRect(innerMargin, innerMargin, canvas.width - innerMargin * 2, canvas.height - innerMargin * 2);
+            
+            ctx.fillStyle = 'rgba(0,0,0,0.02)';
+            for (let i = 0; i < 80; i++) {
+                ctx.beginPath();
+                ctx.arc(
+                    innerMargin + Math.random() * (canvas.width - innerMargin * 2),
+                    innerMargin + Math.random() * (canvas.height - innerMargin * 2),
+                    1, 0, Math.PI * 2
+                );
+                ctx.fill();
+            }
+            
+            ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([6, 6]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width * 0.25, innerMargin + 5);
+            ctx.lineTo(canvas.width * 0.25, canvas.height - innerMargin - 5);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            const pockets = getPockets();
+            for (const p of pockets) {
+                const pocketGrad = ctx.createRadialGradient(p.x, p.y, 5, p.x, p.y, POCKET_RADIUS + 5);
+                pocketGrad.addColorStop(0, '#000');
+                pocketGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = pocketGrad;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, POCKET_RADIUS + 5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#0a0a0a';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, POCKET_RADIUS, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, POCKET_RADIUS - 2, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        
+        function drawCue() {
+            if (!cueBall || cueBall.pocketed) return;
+            
+            if (isFreeBall) return;
+            
+            if (!balls.every(b => !b.isMoving())) return;
+            
+            const dx = dragStart.x - dragEnd.x;
+            const dy = dragStart.y - dragEnd.y;
+            const angle = Math.atan2(dy, dx);
+            const dist = Math.hypot(dx, dy);
+            power = Math.min(dist / 200, 1);
+            
+            if (!isDragging) return;
+            
+            drawTrajectory(angle);
+            
+            ctx.save();
+            ctx.translate(cueBall.x, cueBall.y);
+            ctx.rotate(angle);
+            
+            const lineStart = 15;
+            let lineEnd = Math.max(canvas.width, canvas.height) * 2;
+            
+            for (const b of balls) {
+                if (b === cueBall || b.pocketed) continue;
+                
+                const bx = b.x - cueBall.x;
+                const by = b.y - cueBall.y;
+                const proj = bx * Math.cos(angle) + by * Math.sin(angle);
+                
+                if (proj > 0) {
+                    const perp = Math.abs(bx * (-Math.sin(angle)) + by * Math.cos(angle));
+                    
+                    if (perp < BALL_RADIUS * 2) {
+                        const collisionDist = proj - Math.sqrt(BALL_RADIUS * 2 * BALL_RADIUS * 2 - perp * perp);
+                        if (collisionDist > 0 && collisionDist < lineEnd - lineStart) {
+                            lineEnd = collisionDist + lineStart;
+                        }
+                    }
+                }
+            }
+            
+            const margin = 20;
+            const bounds = [
+                -cueBall.x / Math.cos(angle),
+                (canvas.width - margin - cueBall.x) / Math.cos(angle),
+                -cueBall.y / Math.sin(angle),
+                (canvas.height - margin - cueBall.y) / Math.sin(angle)
+            ];
+            
+            for (const b of bounds) {
+                if (isFinite(b) && b > 0 && b < lineEnd) {
+                    lineEnd = b;
+                }
+            }
+            
+            ctx.beginPath();
+            ctx.moveTo(lineStart, 0);
+            ctx.lineTo(lineEnd, 0);
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 10]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.restore();
+            
+            ctx.save();
+            ctx.translate(cueBall.x, cueBall.y);
+            ctx.rotate(angle + Math.PI);
+            
+            const cueDist = 20 + power * 30;
+            
+            ctx.beginPath();
+            ctx.moveTo(cueDist, 5);
+            ctx.lineTo(cueDist + 180, 5);
+            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+            ctx.lineWidth = 8;
+            ctx.stroke();
+            
+            const grad = ctx.createLinearGradient(cueDist, -3, cueDist + 180, -3);
+            grad.addColorStop(0, '#8B4513');
+            grad.addColorStop(0.1, '#D2691E');
+            grad.addColorStop(0.9, '#8B4513');
+            grad.addColorStop(1, '#4a2c0a');
+            
+            ctx.beginPath();
+            ctx.moveTo(cueDist, -3);
+            ctx.lineTo(cueDist + 180, -3);
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 5;
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(cueDist, 0, 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#4ade80';
+            ctx.fill();
+            
+            ctx.restore();
+            
+            document.getElementById('powerFill').style.width = (power * 100) + '%';
+        }
+        
+        function drawTrajectory(angle) {
+            let targetBall = null;
+            let collisionPoint = null;
+            
+            for (const b of balls) {
+                if (b === cueBall || b.pocketed) continue;
+                
+                const bx = b.x - cueBall.x;
+                const by = b.y - cueBall.y;
+                const proj = bx * Math.cos(angle) + by * Math.sin(angle);
+                
+                if (proj > 0) {
+                    const perp = Math.abs(bx * (-Math.sin(angle)) + by * Math.cos(angle));
+                    
+                    if (perp < BALL_RADIUS * 2) {
+                        const collisionDist = proj - Math.sqrt(BALL_RADIUS * 2 * BALL_RADIUS * 2 - perp * perp);
+                        if (collisionDist > 0) {
+                            targetBall = b;
+                            collisionPoint = {
+                                x: cueBall.x + Math.cos(angle) * collisionDist,
+                                y: cueBall.y + Math.sin(angle) * collisionDist
+                            };
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (!targetBall || !collisionPoint) return;
+            
+            const dx = targetBall.x - collisionPoint.x;
+            const dy = targetBall.y - collisionPoint.y;
+            const targetAngle = Math.atan2(dy, dx);
+            
+            const speed = power * 12;
+            
+            let x = targetBall.x;
+            let y = targetBall.y;
+            let vx = Math.cos(targetAngle) * speed;
+            let vy = Math.sin(targetAngle) * speed;
+            
+            const margin = 20 + BALL_RADIUS;
+            const friction = 0.978;
+            const maxSteps = 50;
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            
+            for (let i = 0; i < maxSteps; i++) {
+                x += vx;
+                y += vy;
+                
+                vx *= friction;
+                vy *= friction;
+                
+                if (x < margin) { x = margin; vx = -vx * 0.85; }
+                if (x > canvas.width - margin) { x = canvas.width - margin; vx = -vx * 0.85; }
+                if (y < margin) { y = margin; vy = -vy * 0.85; }
+                if (y > canvas.height - margin) { y = canvas.height - margin; vy = -vy * 0.85; }
+                
+                if (Math.hypot(vx, vy) < 0.5) break;
+                
+                ctx.lineTo(x, y);
+            }
+            
+            ctx.strokeStyle = 'rgba(255, 165, 0, 0.7)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 165, 0, 0.5)';
+            ctx.fill();
+        }
+        
+        function loop() {
+            // 如果游戏未开始，不绘制
+            if (!gameStarted) {
+                requestAnimationFrame(loop);
+                return;
+            }
+            
+            for (const b of balls) b.update();
+            checkCollisions();
+            
+            if (cueBallPocketed && !isFreeBall) {
+                isFreeBall = true;
+                cueBall.pocketed = true;
+                document.getElementById('statusText').innerHTML = '<span style="color:#f59e0b">⚠️ 白球进袋！点击任意位置放置白球</span>';
+            }
+            
+            const coloredBallsLeft = balls.filter(b => b.num !== 0 && b.num !== 8 && !b.pocketed).length;
+            if (coloredBallsLeft === 0 && !cueBall.pocketed) {
+                const eightBall = balls.find(b => b.num === 8);
+                if (eightBall && !eightBall.pocketed) {
+                    document.getElementById('statusText').innerHTML = '<span style="color:#22c55e">🎉 可以打黑八了！</span>';
+                }
+            }
+            
+            const eightBall = balls.find(b => b.num === 8);
+            if (eightBall && eightBall.pocketed) {
+                document.getElementById('statusText').innerHTML = '<span style="color:#4ade80">🎊 恭喜通关！</span>';
+                showBackButton();
+            }
+            
+            const allPocketed = balls.every(b => b.pocketed);
+            if (allPocketed) {
+                document.getElementById('statusText').innerHTML = '<span style="color:#4ade80">🎊 恭喜通关！</span>';
+                showBackButton();
+            }
+            
+            drawTable();
+            
+            if (isFreeBall) {
+                drawFreeBallPreview();
+            }
+            
+            for (const b of balls) b.draw();
+            drawCue();
+            
+            requestAnimationFrame(loop);
+        }
+        
+        function drawFreeBallPreview() {
+            if (!isFreeBall) return;
+            
+            ctx.fillStyle = 'rgba(74, 222, 128, 0.3)';
+            const margin = TABLE_MARGIN + BALL_RADIUS * 2;
+            const cols = Math.floor((canvas.width - margin * 2) / (BALL_RADIUS * 4));
+            const rows = Math.floor((canvas.height - margin * 2) / (BALL_RADIUS * 4));
+            
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    const x = margin + i * BALL_RADIUS * 4 + BALL_RADIUS * 2;
+                    const y = margin + j * BALL_RADIUS * 4 + BALL_RADIUS * 2;
+                    
+                    let canPlace = true;
+                    for (const b of balls) {
+                        if (b === cueBall || b.pocketed) continue;
+                        if (Math.hypot(b.x - x, b.y - y) < BALL_RADIUS * 2.5) {
+                            canPlace = false;
+                            break;
+                        }
+                    }
+                    
+                    if (canPlace) {
+                        ctx.beginPath();
+                        ctx.arc(x, y, BALL_RADIUS * 0.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+        }
+        
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            if (e.touches && e.touches.length > 0) {
+                return {
+                    x: (e.touches[0].clientX - rect.left) * scaleX,
+                    y: (e.touches[0].clientY - rect.top) * scaleY
+                };
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                return {
+                    x: (e.changedTouches[0].clientX - rect.left) * scaleX,
+                    y: (e.changedTouches[0].clientY - rect.top) * scaleY
+                };
+            }
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+        
+        function onStart(e) {
+            e.preventDefault();
+            
+            if (isFreeBall) {
+                const pos = getPos(e);
+                placeCueBall(pos.x, pos.y);
+                return;
+            }
+            
+            const allStopped = balls.every(b => !b.isMoving());
+            if (!allStopped || cueBall.pocketed) return;
+            
+            isDragging = true;
+            const pos = getPos(e);
+            dragStart = pos;
+            dragEnd = pos;
+        }
+        
+        function placeCueBall(x, y) {
+            const margin = TABLE_MARGIN + BALL_RADIUS;
+            
+            x = Math.max(margin, Math.min(canvas.width - margin, x));
+            y = Math.max(margin, Math.min(canvas.height - margin, y));
+            
+            let canPlace = true;
+            for (const b of balls) {
+                if (b === cueBall || b.pocketed) continue;
+                if (Math.hypot(b.x - x, b.y - y) < BALL_RADIUS * 2.2) {
+                    canPlace = false;
+                    const offsets = [[30,0], [-30,0], [0,30], [0,-30], [20,20], [-20,-20], [20,-20], [-20,20]];
+                    for (const [ox, oy] of offsets) {
+                        const nx = x + ox;
+                        const ny = y + oy;
+                        if (nx > margin && nx < canvas.width - margin && ny > margin && ny < canvas.height - margin) {
+                            let ok = true;
+                            for (const b2 of balls) {
+                                if (b2 === cueBall || b2.pocketed) continue;
+                                if (Math.hypot(b2.x - nx, b2.y - ny) < BALL_RADIUS * 2.2) {
+                                    ok = false;
+                                    break;
+                                }
+                            }
+                            if (ok) {
+                                x = nx;
+                                y = ny;
+                                canPlace = true;
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+            
+            if (canPlace) {
+                cueBall.x = x;
+                cueBall.y = y;
+                cueBall.vx = 0;
+                cueBall.vy = 0;
+                cueBall.pocketed = false;
+                cueBallPocketed = false;
+                isFreeBall = false;
+                document.getElementById('statusText').textContent = '目标: 打进所有球';
+            }
+        }
+        
+        function onMove(e) {
+            e.preventDefault();
+            if (!isDragging) return;
+            dragEnd = getPos(e);
+        }
+        
+        function onEnd(e) {
+            e.preventDefault();
+            if (!isDragging) return;
+            isDragging = false;
+            
+            if (power > 0.05) {
+                const dx = dragStart.x - dragEnd.x;
+                const dy = dragStart.y - dragEnd.y;
+                const angle = Math.atan2(dy, dx);
+                
+                cueBall.vx = Math.cos(angle) * power * 18;
+                cueBall.vy = Math.sin(angle) * power * 18;
+            }
+            
+            power = 0;
+            document.getElementById('powerFill').style.width = '0%';
+        }
+        
+        canvas.addEventListener('mousedown', onStart);
+        canvas.addEventListener('touchstart', onStart, { passive: false });
+        
+        document.addEventListener('mousemove', onMove, { passive: false });
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchend', onEnd);
+        
+        function showBackButton() {
+            document.getElementById('backBtn').style.display = 'inline-block';
+        }
+        
+        function backToMenu() {
+            gameStarted = false;
+            document.getElementById('startMenu').classList.remove('hidden');
+            document.getElementById('gameUI').classList.remove('active');
+            // 重置分数
+            score = 0;
+            document.getElementById('score').textContent = '0';
+            document.getElementById('statusText').textContent = '目标: 打进所有球';
+            document.getElementById('backBtn').style.display = 'none';
+        }
+        
+        function startGame() {
+            document.getElementById('startMenu').classList.add('hidden');
+            document.getElementById('gameUI').classList.add('active');
+            
+            // 重新设置画布大小，确保正确显示
+            resize();
+            
+            // 初始化游戏
+            initBalls();
+            score = 0;
+            isFreeBall = false;
+            cueBallPocketed = false;
+            gameStarted = true;
+            document.getElementById('score').textContent = '0';
+            document.getElementById('statusText').textContent = '目标: 打进所有球';
+            document.getElementById('backBtn').style.display = 'none';
+        }
+        // 启动游戏循环
+        loop();
+    </script>
+</body>
+</html>
