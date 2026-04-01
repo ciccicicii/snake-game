@@ -5,51 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>台球 - 单人练习</title>
     <style>
-        /* 横屏提示 - 竖屏时显示 */
-        .rotate-hint {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: #1a1a2e;
-            z-index: 9999;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .rotate-hint.show {
-            display: flex;
-        }
-        
-        .rotate-hint .icon {
-            font-size: 60px;
-            margin-bottom: 20px;
-            animation: rotate-phone 1.5s ease-in-out infinite;
-        }
-        
-        @keyframes rotate-phone {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(90deg); }
-        }
-        
-        .rotate-hint p {
-            font-size: 18px;
-            color: #aaa;
-        }
-        
-        /* 竖屏时隐藏游戏内容 */
-        @media screen and (orientation: portrait) {
-            body > *:not(.rotate-hint):not(script) {
-                display: none !important;
-            }
-            .rotate-hint.show {
-                display: flex !important;
-            }
-        }
-        
         * {
             margin: 0;
             padding: 0;
@@ -168,12 +123,68 @@
             z-index: 200;
         }
         
+        /* 设备选择界面 */
+        .device-select {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            z-index: 150;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .device-select.show {
+            display: flex;
+        }
+        
+        .device-btn {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 16px;
+            padding: 30px 40px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+        }
+        
+        .device-btn:hover {
+            background: rgba(74,222,128,0.2);
+            border-color: #4ade80;
+            transform: translateY(-5px);
+        }
+        
         .game-ui {
             display: none;
         }
         
         .game-ui.active {
             display: block;
+        }
+        
+        /* 手机模式旋转 */
+        body.mobile-mode {
+            transform: rotate(90deg);
+            transform-origin: center center;
+            width: 100vh;
+            height: 100vw;
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+        }
+        
+        body.mobile-mode .back-btn {
+            top: 10px;
+            right: 10px;
+            left: auto;
         }
         
         h1 {
@@ -230,20 +241,28 @@
     </style>
 </head>
 <body>
-    <!-- 横屏提示 -->
-    <div class="rotate-hint" id="rotateHint">
-        <div class="icon">📱</div>
-        <p>请将手机横屏后刷新页面</p>
-        <p style="margin-top:10px;font-size:14px;color:#666;">横屏模式，球桌更大，玩得更爽！</p>
-    </div>
-    
     <!-- 开始菜单 -->
     <div id="startMenu">
         <div class="menu-table" id="menuTable">
             <!-- JS生成散落小球 -->
         </div>
         <h1 class="menu-title">🎱 台球</h1>
-        <button class="start-btn" id="startBtn" onclick="startGame()">开始游戏</button>
+        <button class="start-btn" id="startBtn" onclick="showDeviceSelect()">开始游戏</button>
+    </div>
+    
+    <!-- 设备选择界面 -->
+    <div id="deviceSelect" class="device-select">
+        <h2 style="color:#fff; margin-bottom:30px;">请选择您的设备</h2>
+        <div style="display:flex; gap:30px; flex-wrap:wrap; justify-content:center;">
+            <button class="device-btn" onclick="startGame('pc')">
+                <span style="font-size:48px;">💻</span>
+                <span>电脑</span>
+            </button>
+            <button class="device-btn" onclick="startGame('mobile')">
+                <span style="font-size:48px;">📱</span>
+                <span>手机</span>
+            </button>
+        </div>
     </div>
     
     <a href="index.html" class="back-btn">← 返回大厅</a>
@@ -270,24 +289,10 @@
     <script>
         // 生成菜单页散落小球
         function createMenuBalls() {
-            // 检测横屏
-            function checkOrientation() {
-                const hint = document.getElementById('rotateHint');
-                if (window.innerHeight > window.innerWidth) {
-                    hint.classList.add('show');
-                } else {
-                    hint.classList.remove('show');
-                }
-            }
-            
-            checkOrientation();
-            window.addEventListener('resize', checkOrientation);
-            window.addEventListener('orientationchange', checkOrientation);
-            
             // 移动端触摸支持
             document.getElementById('startBtn').addEventListener('touchstart', function(e) {
                 e.preventDefault();
-                startGame();
+                showDeviceSelect();
             });
             
             const table = document.getElementById('menuTable');
@@ -1037,21 +1042,35 @@
         
         function backToMenu() {
             gameStarted = false;
+            document.body.classList.remove('mobile-mode');
             document.getElementById('startMenu').classList.remove('hidden');
             document.getElementById('gameUI').classList.remove('active');
             // 重置分数
             score = 0;
             document.getElementById('score').textContent = '0';
             document.getElementById('statusText').textContent = '目标: 打进所有球';
-            document.getElementById('backBtn').style.display = 'none';
         }
         
-        function startGame() {
+        // 显示设备选择界面
+        function showDeviceSelect() {
             document.getElementById('startMenu').classList.add('hidden');
+            document.getElementById('deviceSelect').classList.add('show');
+        }
+        
+        function startGame(deviceType) {
+            document.getElementById('deviceSelect').classList.remove('show');
             document.getElementById('gameUI').classList.add('active');
             
-            // 重新设置画布大小，确保正确显示
-            resize();
+            // 如果是手机模式，旋转整个页面
+            if (deviceType === 'mobile') {
+                document.body.classList.add('mobile-mode');
+                // 延迟一下再调整画布，确保旋转完成
+                setTimeout(function() {
+                    resize();
+                }, 100);
+            } else {
+                resize();
+            }
             
             // 初始化游戏
             initBalls();
@@ -1061,7 +1080,7 @@
             gameStarted = true;
             document.getElementById('score').textContent = '0';
             document.getElementById('statusText').textContent = '目标: 打进所有球';
-            document.getElementById('backBtn').style.display = 'none';
+            document.getElementById('backBtn').style.display = 'inline-block';
         }
         // 启动游戏循环
         loop();
