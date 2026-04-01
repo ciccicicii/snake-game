@@ -97,11 +97,17 @@
             cursor: pointer;
             box-shadow: 0 8px 25px rgba(74,222,128,0.4);
             transition: transform 0.3s, box-shadow 0.3s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
         
         .start-btn:hover {
             transform: translateY(-3px);
             box-shadow: 0 12px 30px rgba(74,222,128,0.5);
+        }
+        
+        .start-btn:active {
+            transform: translateY(0);
         }
         
         .back-btn {
@@ -185,7 +191,7 @@
             <!-- JS生成散落小球 -->
         </div>
         <h1 class="menu-title">🎱 台球</h1>
-        <button class="start-btn" onclick="startGame()">开始游戏</button>
+        <button class="start-btn" id="startBtn" onclick="startGame()">开始游戏</button>
     </div>
     
     <a href="index.html" class="back-btn">← 返回大厅</a>
@@ -212,6 +218,12 @@
     <script>
         // 生成菜单页散落小球
         function createMenuBalls() {
+            // 移动端触摸支持
+            document.getElementById('startBtn').addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                startGame();
+            });
+            
             const table = document.getElementById('menuTable');
             const colors = ['#FFD700', '#0000FF', '#FF0000', '#800080', '#FFA500', '#008000', '#800000', '#000000'];
             
