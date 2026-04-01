@@ -254,11 +254,11 @@
     <div id="deviceSelect" class="device-select">
         <h2 style="color:#fff; margin-bottom:30px;">请选择您的设备</h2>
         <div style="display:flex; gap:30px; flex-wrap:wrap; justify-content:center;">
-            <button class="device-btn" onclick="startGame('pc')">
+            <button class="device-btn" id="btn-pc">
                 <span style="font-size:48px;">💻</span>
                 <span>电脑</span>
             </button>
-            <button class="device-btn" onclick="startGame('mobile')">
+            <button class="device-btn" id="btn-mobile">
                 <span style="font-size:48px;">📱</span>
                 <span>手机</span>
             </button>
@@ -294,6 +294,10 @@
                 e.preventDefault();
                 showDeviceSelect();
             });
+            
+            // 电脑/手机按钮事件
+            document.getElementById('btn-pc').addEventListener('click', function() { startGame('pc'); });
+            document.getElementById('btn-mobile').addEventListener('click', function() { startGame('mobile'); });
             
             const table = document.getElementById('menuTable');
             const colors = ['#FFD700', '#0000FF', '#FF0000', '#800080', '#FFA500', '#008000', '#800000', '#000000'];
@@ -1058,8 +1062,9 @@
         }
         
         function startGame(deviceType) {
-            document.getElementById('deviceSelect').classList.remove('show');
-            document.getElementById('gameUI').classList.add('active');
+            console.log('startGame called with:', deviceType);
+            document.getElementById('deviceSelect').style.display = 'none';
+            document.getElementById('gameUI').style.display = 'block';
             
             // 如果是手机模式，旋转整个页面
             if (deviceType === 'mobile') {
@@ -1081,6 +1086,7 @@
             document.getElementById('score').textContent = '0';
             document.getElementById('statusText').textContent = '目标: 打进所有球';
             document.getElementById('backBtn').style.display = 'inline-block';
+            console.log('gameStarted set to true');
         }
         // 启动游戏循环
         loop();
