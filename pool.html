@@ -5,6 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>台球 - 单人练习</title>
     <style>
+        /* 横屏提示 - 竖屏时显示 */
+        .rotate-hint {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #1a1a2e;
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .rotate-hint.show {
+            display: flex;
+        }
+        
+        .rotate-hint .icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: rotate-phone 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes rotate-phone {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+        
+        .rotate-hint p {
+            font-size: 18px;
+            color: #aaa;
+        }
+        
+        /* 竖屏时隐藏游戏内容 */
+        @media screen and (orientation: portrait) {
+            body > *:not(.rotate-hint):not(script) {
+                display: none !important;
+            }
+            .rotate-hint.show {
+                display: flex !important;
+            }
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -185,6 +230,13 @@
     </style>
 </head>
 <body>
+    <!-- 横屏提示 -->
+    <div class="rotate-hint" id="rotateHint">
+        <div class="icon">📱</div>
+        <p>请将手机横屏后刷新页面</p>
+        <p style="margin-top:10px;font-size:14px;color:#666;">横屏模式，球桌更大，玩得更爽！</p>
+    </div>
+    
     <!-- 开始菜单 -->
     <div id="startMenu">
         <div class="menu-table" id="menuTable">
@@ -218,6 +270,20 @@
     <script>
         // 生成菜单页散落小球
         function createMenuBalls() {
+            // 检测横屏
+            function checkOrientation() {
+                const hint = document.getElementById('rotateHint');
+                if (window.innerHeight > window.innerWidth) {
+                    hint.classList.add('show');
+                } else {
+                    hint.classList.remove('show');
+                }
+            }
+            
+            checkOrientation();
+            window.addEventListener('resize', checkOrientation);
+            window.addEventListener('orientationchange', checkOrientation);
+            
             // 移动端触摸支持
             document.getElementById('startBtn').addEventListener('touchstart', function(e) {
                 e.preventDefault();
@@ -256,7 +322,7 @@
         // 配置
         const TABLE_MARGIN = 20;
         const POCKET_RADIUS = 22;
-        const BALL_RADIUS = 11;
+        let BALL_RADIUS = 11;
         const FRICTION = 0.978;
         const MIN_VELOCITY = 0.08;
         
@@ -283,15 +349,37 @@
         
         // 设置画布大小
         function resize() {
-            const maxW = Math.min(window.innerWidth - 20, 800);
-            const maxH = window.innerHeight * 0.5;
+            const isLandscape = window.innerWidth > window.innerHeight;
             
-            if (maxW / maxH > 2) {
-                canvas.height = maxH;
-                canvas.width = maxH * 2;
+            if (isLandscape) {
+                // 横屏模式 - 更大的画布
+                canvas.width = window.innerWidth - 40;
+                canvas.height = window.innerHeight * 0.7;
+                
+                // 保持比例
+                if (canvas.width / canvas.height > 2) {
+                    canvas.width = canvas.height * 2;
+                } else {
+                    canvas.height = canvas.width / 2;
+                }
+                
+                // 横屏时球更大
+                BALL_RADIUS = Math.min(14, canvas.width / 40);
             } else {
-                canvas.width = maxW;
-                canvas.height = maxW / 2;
+                // 竖屏模式
+                const maxW = Math.min(window.innerWidth - 20, 800);
+                const maxH = window.innerHeight * 0.5;
+                
+                if (maxW / maxH > 2) {
+                    canvas.height = maxH;
+                    canvas.width = maxH * 2;
+                } else {
+                    canvas.width = maxW;
+                    canvas.height = maxW / 2;
+                }
+                
+                // 竖屏时球稍小
+                BALL_RADIUS = Math.min(10, canvas.width / 50);
             }
         }
         
