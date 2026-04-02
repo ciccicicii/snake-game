@@ -295,9 +295,33 @@
                 showDeviceSelect();
             });
             
-            // 电脑/手机按钮事件
-            document.getElementById('btn-pc').addEventListener('click', function() { startGame('pc'); });
-            document.getElementById('btn-mobile').addEventListener('click', function() { startGame('mobile'); });
+            document.getElementById('startBtn').addEventListener('click', function() {
+                showDeviceSelect();
+            });
+            
+            // 电脑/手机按钮事件 - 同时支持点击和触摸
+            const btnPc = document.getElementById('btn-pc');
+            const btnMobile = document.getElementById('btn-mobile');
+            
+            btnPc.addEventListener('click', function(e) { 
+                e.preventDefault();
+                startGame('pc'); 
+            });
+            btnPc.addEventListener('touchstart', function(e) { 
+                e.preventDefault();
+                e.stopPropagation();
+                startGame('pc'); 
+            });
+            
+            btnMobile.addEventListener('click', function(e) { 
+                e.preventDefault();
+                startGame('mobile'); 
+            });
+            btnMobile.addEventListener('touchstart', function(e) { 
+                e.preventDefault();
+                e.stopPropagation();
+                startGame('mobile'); 
+            });
             
             const table = document.getElementById('menuTable');
             const colors = ['#FFD700', '#0000FF', '#FF0000', '#800080', '#FFA500', '#008000', '#800000', '#000000'];
@@ -1063,7 +1087,9 @@
         
         function startGame(deviceType) {
             console.log('startGame called with:', deviceType);
+            document.getElementById('deviceSelect').classList.remove('show');
             document.getElementById('deviceSelect').style.display = 'none';
+            document.getElementById('gameUI').classList.add('active');
             document.getElementById('gameUI').style.display = 'block';
             
             // 如果是手机模式，旋转整个页面
