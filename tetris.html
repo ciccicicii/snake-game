@@ -498,6 +498,8 @@
         function gameLoop(time = 0) {
             if (!gameRunning) return;
             
+            if (lastTime === 0) lastTime = time;
+            
             dropCounter += time - lastTime;
             lastTime = time;
             

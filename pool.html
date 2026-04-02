@@ -171,20 +171,51 @@
         
         /* 手机模式旋转 */
         body.mobile-mode {
-            transform: rotate(90deg);
-            transform-origin: center center;
             width: 100vh;
             height: 100vw;
             position: fixed;
             top: 0;
             left: 0;
             overflow: hidden;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
         }
         
         body.mobile-mode .back-btn {
             top: 10px;
             right: 10px;
             left: auto;
+        }
+        
+        body.mobile-mode .game-ui {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        
+        body.mobile-mode h1 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        body.mobile-mode .info-bar {
+            gap: 15px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        body.mobile-mode .tips {
+            font-size: 12px;
+            margin-top: 8px;
+        }
+        
+        body.mobile-mode .power-indicator {
+            width: 200px;
+            margin-top: 8px;
         }
         
         h1 {
@@ -1092,16 +1123,17 @@
             document.getElementById('gameUI').classList.add('active');
             document.getElementById('gameUI').style.display = 'block';
             
-            // 如果是手机模式，旋转整个页面
+            // 如果是手机模式，添加对应class
             if (deviceType === 'mobile') {
                 document.body.classList.add('mobile-mode');
-                // 延迟一下再调整画布，确保旋转完成
-                setTimeout(function() {
-                    resize();
-                }, 100);
             } else {
-                resize();
+                document.body.classList.remove('mobile-mode');
             }
+            
+            // 延迟一下再调整画布
+            setTimeout(function() {
+                resize();
+            }, 100);
             
             // 初始化游戏
             initBalls();
