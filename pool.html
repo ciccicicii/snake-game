@@ -376,12 +376,12 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // 配置
-        const TABLE_MARGIN = 15;
-        const POCKET_RADIUS = 14;
-        let BALL_RADIUS = 8;
+        // 配置 - 根据画布动态计算
         const FRICTION = 0.978;
         const MIN_VELOCITY = 0.08;
+        
+        function getTableMargin() { return canvas.width * 0.08; }
+        function getPocketRadius() { return canvas.width * 0.07; }
         
         // 球颜色
         const BALL_COLORS = {
@@ -410,16 +410,23 @@
             
             // 始终保持竖桌（宽 < 高），适应各种屏幕
             if (isLandscape) {
-                // 横屏模式 - 竖桌居中
-                const maxHeight = window.innerHeight * 0.85;
-                const maxWidth = window.innerWidth * 0.9;
+                // 横屏模式 - 竖桌居中，占满屏幕
+                const maxHeight = window.innerHeight * 0.9;
+                const maxWidth = window.innerWidth * 0.95;
                 
-                // 竖桌比例 0.5:1
-                canvas.height = Math.min(maxHeight, maxWidth * 2);
+                // 竖桌比例 1:2 (宽:高 = 0.5)
+                // 先以高度为主
+                canvas.height = maxHeight;
                 canvas.width = canvas.height * 0.5;
                 
-                // 球大小根据画布调整
-                BALL_RADIUS = canvas.height / 28;
+                // 如果宽度超了，就以宽度为主
+                if (canvas.width > maxWidth) {
+                    canvas.width = maxWidth;
+                    canvas.height = canvas.width * 2;
+                }
+                
+                // 球大小：球桌宽度的 1/25
+                BALL_RADIUS = canvas.width / 25;
             } else {
                 // 竖屏模式
                 const maxH = window.innerHeight * 0.6;
@@ -428,8 +435,8 @@
                 canvas.height = Math.min(maxH, maxW * 2);
                 canvas.width = canvas.height * 0.5;
                 
-                // 球稍小
-                BALL_RADIUS = canvas.height / 32;
+                // 球大小
+                BALL_RADIUS = canvas.width / 25;
             }
         }
         
@@ -438,7 +445,7 @@
         
         // 球袋位置 - 竖桌
         function getPockets() {
-            const m = 12;
+            const m = getTableMargin();
             return [
                 { x: m, y: m },
                 { x: canvas.width / 2, y: m - 3 },
@@ -473,7 +480,7 @@
                 if (Math.abs(this.vx) < MIN_VELOCITY) this.vx = 0;
                 if (Math.abs(this.vy) < MIN_VELOCITY) this.vy = 0;
                 
-                const margin = 20 + this.radius;
+                const margin = getTableMargin() + this.radius;
                 if (this.x < margin) { this.x = margin; this.vx = -this.vx * 0.85; }
                 if (this.x > canvas.width - margin) { this.x = canvas.width - margin; this.vx = -this.vx * 0.85; }
                 if (this.y < margin) { this.y = margin; this.vy = -this.vy * 0.85; }
@@ -482,7 +489,7 @@
                 const pockets = getPockets();
                 for (const p of pockets) {
                     const dist = Math.hypot(this.x - p.x, this.y - p.y);
-                    if (dist < POCKET_RADIUS + 4) {
+                    if (dist < getPocketRadius() + 4) {
                         this.pocketed = true;
                         this.vx = 0;
                         this.vy = 0;
@@ -649,23 +656,24 @@
             
             const pockets = getPockets();
             for (const p of pockets) {
-                const pocketGrad = ctx.createRadialGradient(p.x, p.y, 5, p.x, p.y, POCKET_RADIUS + 5);
+                const pr = getPocketRadius();
+                const pocketGrad = ctx.createRadialGradient(p.x, p.y, 5, p.x, p.y, pr + 5);
                 pocketGrad.addColorStop(0, '#000');
                 pocketGrad.addColorStop(1, 'rgba(0,0,0,0)');
                 ctx.fillStyle = pocketGrad;
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, POCKET_RADIUS + 5, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, pr + 5, 0, Math.PI * 2);
                 ctx.fill();
                 
                 ctx.fillStyle = '#0a0a0a';
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, POCKET_RADIUS, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, pr, 0, Math.PI * 2);
                 ctx.fill();
                 
                 ctx.strokeStyle = '#333';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, POCKET_RADIUS - 2, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, pr - 2, 0, Math.PI * 2);
                 ctx.stroke();
             }
         }
@@ -901,7 +909,7 @@
             if (!isFreeBall) return;
             
             ctx.fillStyle = 'rgba(74, 222, 128, 0.3)';
-            const margin = TABLE_MARGIN + BALL_RADIUS * 2;
+            const margin = getTableMargin();
             const cols = Math.floor((canvas.width - margin * 2) / (BALL_RADIUS * 4));
             const rows = Math.floor((canvas.height - margin * 2) / (BALL_RADIUS * 4));
             
