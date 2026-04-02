@@ -410,22 +410,26 @@
             
             // 始终保持竖桌（宽 < 高），适应各种屏幕
             if (isLandscape) {
-                // 横屏模式 - 画布靠左，竖向放置
-                canvas.height = window.innerHeight * 0.75;
-                canvas.width = canvas.height * 0.5; // 竖桌 0.5:1
+                // 横屏模式 - 竖桌居中
+                const maxHeight = window.innerHeight * 0.85;
+                const maxWidth = window.innerWidth * 0.9;
                 
-                // 球大小
-                BALL_RADIUS = Math.min(10, canvas.height / 35);
+                // 竖桌比例 0.5:1
+                canvas.height = Math.min(maxHeight, maxWidth * 2);
+                canvas.width = canvas.height * 0.5;
+                
+                // 球大小根据画布调整
+                BALL_RADIUS = canvas.height / 28;
             } else {
-                // 竖屏模式 - 竖桌
-                const maxH = window.innerHeight * 0.55;
+                // 竖屏模式
+                const maxH = window.innerHeight * 0.6;
                 const maxW = window.innerWidth - 20;
                 
                 canvas.height = Math.min(maxH, maxW * 2);
                 canvas.width = canvas.height * 0.5;
                 
                 // 球稍小
-                BALL_RADIUS = Math.min(8, canvas.width / 45);
+                BALL_RADIUS = canvas.height / 32;
             }
         }
         
@@ -496,77 +500,41 @@
             draw() {
                 if (this.pocketed) return;
                 
-                const color = this.num === 0 ? '#fff' : (this.num === 8 ? '#000' : BALL_COLORS[this.num]);
-                const isStripe = this.num > 8;
-                
-                const rotation = (this.x / this.radius) * 0.5;
-                
-                const grad = ctx.createRadialGradient(this.x - 3, this.y - 3, 0, this.x, this.y, this.radius);
-                
+                let color;
                 if (this.num === 0) {
-                    grad.addColorStop(0, '#ffffff');
-                    grad.addColorStop(1, '#cccccc');
-                } else if (isStripe) {
-                    grad.addColorStop(0, '#ffffff');
-                    grad.addColorStop(1, color);
+                    color = '#ffffff';
+                } else if (this.num === 8) {
+                    color = '#000000';
                 } else {
-                    grad.addColorStop(0, lighten(color, 50));
-                    grad.addColorStop(1, color);
+                    color = BALL_COLORS[this.num] || '#ff0000';
                 }
                 
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                
+                // 绘制球的阴影
                 ctx.beginPath();
-                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = grad;
+                ctx.arc(this.x + 2, this.y + 2, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
                 ctx.fill();
                 
-                if (isStripe) {
-                    ctx.beginPath();
-                    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = '#fff';
-                    ctx.fill();
-                    ctx.save();
-                    ctx.rotate(rotation);
-                    ctx.fillStyle = color;
-                    ctx.fillRect(-this.radius, -4, this.radius * 2, 8);
-                    ctx.restore();
-                }
+                // 绘制球体
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
                 
+                // 绘制球的高光
+                ctx.beginPath();
+                ctx.arc(this.x - this.radius * 0.3, this.y - this.radius * 0.3, this.radius * 0.3, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.fill();
+                
+                // 绘制球号
                 if (this.num > 0) {
-                    ctx.fillStyle = '#fff';
-                    ctx.beginPath();
-                    ctx.arc(0, 0, 5, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillStyle = '#000';
-                    ctx.font = 'bold 7px Arial';
+                    ctx.fillStyle = this.num === 8 ? '#fff' : '#000';
+                    ctx.font = 'bold ' + (this.radius * 0.8) + 'px Arial';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(this.num, 0, 0.5);
-                } else {
-                    ctx.save();
-                    ctx.rotate(rotation);
-                    ctx.strokeStyle = 'rgba(200,200,200,0.5)';
-                    ctx.lineWidth = 1;
-                    for (let i = 0; i < 3; i++) {
-                        ctx.beginPath();
-                        ctx.moveTo(-this.radius * 0.6, -4 + i * 4);
-                        ctx.lineTo(this.radius * 0.6, -4 + i * 4);
-                        ctx.stroke();
-                    }
-                    ctx.restore();
+                    ctx.fillText(this.num, this.x, this.y);
                 }
-                
-                const highlightGrad = ctx.createRadialGradient(-3, -3, 0, -3, -3, this.radius * 0.4);
-                highlightGrad.addColorStop(0, 'rgba(255,255,255,0.6)');
-                highlightGrad.addColorStop(1, 'rgba(255,255,255,0)');
-                ctx.beginPath();
-                ctx.arc(-3, -3, this.radius * 0.4, 0, Math.PI * 2);
-                ctx.fillStyle = highlightGrad;
-                ctx.fill();
-                
-                ctx.restore();
             }
             
             isMoving() {
