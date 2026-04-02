@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CutPlay 消消乐</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 15s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .menu-container {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 50px 60px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 30px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+                        inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: containerIn 0.8s ease-out;
+        }
+
+        @keyframes containerIn {
+            from {
+                transform: scale(0.8) translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .logo {
+            margin-bottom: 10px;
+        }
+
+        .logo-icon {
+            font-size: 80px;
+            display: inline-block;
+            animation: bounce 2s ease-in-out infinite;
+            filter: drop-shadow(0 10px 30px rgba(255, 107, 107, 0.5));
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .title {
+            font-size: 3.5em;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: 3px;
+        }
+
+        .title .cut {
+            background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+        }
+
+        .title .play {
+            background: linear-gradient(135deg, #48dbfb 0%, #1dd1a1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.1em;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .menu-btn {
+            position: relative;
+            padding: 18px 50px;
+            font-size: 1.3em;
+            font-weight: 600;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .menu-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .menu-btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-play {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff9f43 100%);
+            color: white;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-play:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(255, 107, 107, 0.5);
+        }
+
+        .btn-about {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-about:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .version {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.85em;
+        }
+
+        /* Decorative gems */
+        .deco-gems {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .deco-gem {
+            position: absolute;
+            font-size: 30px;
+            opacity: 0.4;
+            animation: gemFloat 4s ease-in-out infinite;
+        }
+
+        .deco-gem:nth-child(1) { top: -20px; left: -20px; animation-delay: 0s; }
+        .deco-gem:nth-child(2) { top: -15px; right: -15px; animation-delay: 1s; }
+        .deco-gem:nth-child(3) { bottom: -20px; left: -10px; animation-delay: 2s; }
+        .deco-gem:nth-child(4) { bottom: -15px; right: -20px; animation-delay: 0.5s; }
+
+        @keyframes gemFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(10deg); }
+        }
+
+        /* Sparkle effect */
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            animation: sparkle 1.5s ease-in-out infinite;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        @media (max-width: 500px) {
+            .menu-container {
+                padding: 40px 30px;
+                margin: 20px;
+            }
+            .title {
+                font-size: 2.5em;
+            }
+            .logo-icon {
+                font-size: 60px;
+            }
+            .menu-btn {
+                padding: 15px 40px;
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+
+    <div class="menu-container">
+        <div class="deco-gems">
+            <div class="deco-gem">💎</div>
+            <div class="deco-gem">💎</div>
+            <div class="deco-gem">💎</div>
+            <div class="deco-gem">💎</div>
+        </div>
+
+        <div class="logo">
+            <div class="logo-icon">🎮</div>
+        </div>
+
+        <h1 class="title">
+            <span class="cut">Cut</span><span class="play">Play</span>
+        </h1>
+
+        <p class="subtitle">消除快乐 · 益智休闲</p>
+
+        <div class="menu-buttons">
+            <a href="game.html" class="menu-btn btn-play">🎯 开始游戏</a>
+            <button class="menu-btn btn-about" onclick="showAbout()">ℹ️ 关于游戏</button>
+        </div>
+
+        <div class="version">Version 1.0.0</div>
+    </div>
+
+    <div class="modal" id="aboutModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); justify-content: center; align-items: center; z-index: 100;">
+        <div style="background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 40px; border-radius: 20px; text-align: center; color: white; max-width: 400px; animation: modalIn 0.3s ease;">
+            <h2 style="font-size: 1.8em; margin-bottom: 20px;">📖 关于 CutPlay</h2>
+            <p style="color: #aaa; line-height: 1.8; margin-bottom: 15px;">
+                这是一款精心设计的消消乐游戏。<br>
+                匹配3个或更多相同宝石即可消除。<br>
+                挑战更高分数，解锁更多关卡！
+            </p>
+            <p style="color: #48dbfb; font-size: 0.9em;">
+                🎨 精心设计的视觉效果<br>
+                ⚡ 流畅的游戏体验<br>
+                🏆 无限关卡挑战
+            </p>
+            <button onclick="closeAbout()" class="menu-btn btn-play" style="margin-top: 25px; padding: 12px 40px; font-size: 1em;">关闭</button>
+        </div>
+    </div>
+
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+
+                const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1', '#ff9ff3'];
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.opacity = 0.3 + Math.random() * 0.4;
+
+                container.appendChild(particle);
+            }
+        }
+
+        function showAbout() {
+            document.getElementById('aboutModal').style.display = 'flex';
+        }
+
+        function closeAbout() {
+            document.getElementById('aboutModal').style.display = 'none';
+        }
+
+        createParticles();
+    </script>
+</body>
+</html>

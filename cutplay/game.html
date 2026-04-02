@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CutPlay 消消乐</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .title {
+            text-align: center;
+            color: #fff;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255, 200, 100, 0.8);
+            letter-spacing: 4px;
+        }
+
+        .title span {
+            background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+        }
+
+        .info-item {
+            text-align: center;
+            color: #fff;
+        }
+
+        .info-item .label {
+            font-size: 0.85em;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .info-item .value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .info-item .value.score {
+            color: #feca57;
+        }
+
+        .info-item .value.target {
+            color: #48dbfb;
+        }
+
+        .info-item .value.moves {
+            color: #ff6b6b;
+        }
+
+        .info-item .value.level {
+            color: #ff9ff3;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 6px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .cell:hover {
+            transform: scale(1.08);
+            z-index: 10;
+        }
+
+        .cell.selected {
+            box-shadow: 0 0 0 4px #fff, 0 0 20px rgba(255, 255, 255, 0.8);
+            transform: scale(1.1);
+            z-index: 20;
+        }
+
+        .cell.matched {
+            animation: matched 0.3s ease forwards;
+        }
+
+        .cell.falling {
+            animation: falling 0.4s ease-out;
+        }
+
+        .cell.new {
+            animation: appear 0.3s ease-out;
+        }
+
+        @keyframes matched {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        @keyframes falling {
+            0% { transform: translateY(-60px); opacity: 0; }
+            60% { transform: translateY(5px); }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes appear {
+            0% { transform: scale(0); }
+            80% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .gem {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.3),
+                        inset 0 4px 8px rgba(255, 255, 255, 0.3),
+                        0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .gem::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 8px;
+            width: 12px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+        }
+
+        .gem.red {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+        }
+
+        .gem.yellow {
+            background: linear-gradient(135deg, #feca57 0%, #f9b529 100%);
+        }
+
+        .gem.blue {
+            background: linear-gradient(135deg, #48dbfb 0%, #2bcbba 100%);
+        }
+
+        .gem.green {
+            background: linear-gradient(135deg, #1dd1a1 0%, #10ac84 100%);
+        }
+
+        .gem.purple {
+            background: linear-gradient(135deg, #ff9ff3 0%, #f368e0 100%);
+        }
+
+        .gem.orange {
+            background: linear-gradient(135deg, #ff9f43 0%, #ee8c32 100%);
+        }
+
+        .gem.bomb::before {
+            content: '💣';
+            font-size: 24px;
+            position: absolute;
+        }
+
+        .gem.rainbow::before {
+            content: '🌈';
+            font-size: 24px;
+            position: absolute;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            font-size: 1em;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: bold;
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: white;
+        }
+
+        .btn-hint {
+            background: linear-gradient(135deg, #48dbfb, #2bcbba);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-content h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .modal-content p {
+            font-size: 1.2em;
+            margin-bottom: 25px;
+            color: #aaa;
+        }
+
+        .modal-content .btn {
+            margin: 5px;
+        }
+
+        .combo-text {
+            position: fixed;
+            font-size: 2em;
+            font-weight: bold;
+            color: #feca57;
+            text-shadow: 0 0 20px rgba(254, 202, 87, 0.8);
+            pointer-events: none;
+            animation: comboAnim 1s ease forwards;
+            z-index: 50;
+        }
+
+        @keyframes comboAnim {
+            0% { transform: scale(0.5) translateY(0); opacity: 1; }
+            100% { transform: scale(1.5) translateY(-50px); opacity: 0; }
+        }
+
+        @media (max-width: 500px) {
+            .cell {
+                width: 38px;
+                height: 38px;
+            }
+            .gem {
+                width: 30px;
+                height: 30px;
+            }
+            .game-container {
+                padding: 15px;
+            }
+            .title {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">🎮 <span>CutPlay</span></h1>
+        <div class="info-bar">
+            <div class="info-item">
+                <div class="label">关卡</div>
+                <div class="value level" id="level">1</div>
+            </div>
+            <div class="info-item">
+                <div class="label">步数</div>
+                <div class="value moves" id="moves">20</div>
+            </div>
+            <div class="info-item">
+                <div class="label">分数</div>
+                <div class="value score" id="score">0</div>
+            </div>
+            <div class="info-item">
+                <div class="label">目标</div>
+                <div class="value target" id="target">500</div>
+            </div>
+        </div>
+        <div class="game-board" id="board"></div>
+        <div class="buttons">
+            <button class="btn btn-restart" onclick="restartGame()">🔄 重新开始</button>
+            <button class="btn btn-hint" onclick="showHint()">💡 提示</button>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2 id="modal-title">🎉 过关啦！</h2>
+            <p id="modal-text">恭喜进入第 2 关！</p>
+            <button class="btn btn-restart" onclick="nextLevel()" id="modal-btn">下一关</button>
+        </div>
+    </div>
+
+    <script>
+        const GRID_SIZE = 8;
+        const GEM_TYPES = ['red', 'yellow', 'blue', 'green', 'purple', 'orange'];
+        const INITIAL_MOVES = 20;
+        const BASE_TARGET = 500;
+        const TARGET_INCREMENT = 300;
+
+        let grid = [];
+        let selectedCell = null;
+        let score = 0;
+        let moves = INITIAL_MOVES;
+        let level = 1;
+        let target = BASE_TARGET;
+        let isProcessing = false;
+        let comboCount = 0;
+
+        function init() {
+            score = 0;
+            moves = INITIAL_MOVES;
+            level = 1;
+            target = BASE_TARGET;
+            selectedCell = null;
+            isProcessing = false;
+            comboCount = 0;
+            createGrid();
+            updateUI();
+            renderBoard();
+        }
+
+        function createGrid() {
+            grid = [];
+            for (let row = 0; row < GRID_SIZE; row++) {
+                grid[row] = [];
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    let type;
+                    do {
+                        type = GEM_TYPES[Math.floor(Math.random() * GEM_TYPES.length)];
+                    } while (wouldCreateMatch(row, col, type));
+                    grid[row][col] = { type, isBomb: false, isRainbow: false };
+                }
+            }
+        }
+
+        function wouldCreateMatch(row, col, type) {
+            // Check horizontal
+            if (col >= 2 && grid[row][col-1]?.type === type && grid[row][col-2]?.type === type) {
+                return true;
+            }
+            // Check vertical
+            if (row >= 2 && grid[row-1]?.[col]?.type === type && grid[row-2]?.[col]?.type === type) {
+                return true;
+            }
+            return false;
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    cell.onclick = () => handleCellClick(row, col);
+                    updateCellContent(cell, row, col);
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        function updateCellContent(cell, row, col) {
+            cell.innerHTML = '';
+            const gem = grid[row][col];
+            if (!gem) return;
+
+            const gemDiv = document.createElement('div');
+            gemDiv.className = `gem ${gem.type}`;
+            if (gem.isBomb) gemDiv.classList.add('bomb');
+            if (gem.isRainbow) gemDiv.classList.add('rainbow');
+            cell.appendChild(gemDiv);
+        }
+
+        function handleCellClick(row, col) {
+            if (isProcessing || moves <= 0) return;
+
+            const clickedCell = { row, col };
+
+            if (!selectedCell) {
+                selectedCell = clickedCell;
+                highlightCell(row, col, true);
+            } else if (selectedCell.row === row && selectedCell.col === col) {
+                highlightCell(row, col, false);
+                selectedCell = null;
+            } else if (isAdjacent(selectedCell, clickedCell)) {
+                swapCells(selectedCell, clickedCell);
+            } else {
+                highlightCell(selectedCell.row, selectedCell.col, false);
+                selectedCell = clickedCell;
+                highlightCell(row, col, true);
+            }
+        }
+
+        function isAdjacent(cell1, cell2) {
+            const rowDiff = Math.abs(cell1.row - cell2.row);
+            const colDiff = Math.abs(cell1.col - cell2.col);
+            return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+        }
+
+        function highlightCell(row, col, highlight) {
+            const index = row * GRID_SIZE + col;
+            const cell = document.querySelectorAll('.cell')[index];
+            if (cell) {
+                if (highlight) cell.classList.add('selected');
+                else cell.classList.remove('selected');
+            }
+        }
+
+        async function swapCells(cell1, cell2) {
+            isProcessing = true;
+            highlightCell(cell1.row, cell1.col, false);
+            selectedCell = null;
+
+            // Swap in grid
+            const temp = grid[cell1.row][cell1.col];
+            grid[cell1.row][cell1.col] = grid[cell2.row][cell2.col];
+            grid[cell2.row][cell2.col] = temp;
+
+            renderBoard();
+
+            const matches = findMatches();
+            if (matches.length === 0) {
+                // Swap back
+                await delay(200);
+                const temp2 = grid[cell1.row][cell1.col];
+                grid[cell1.row][cell1.col] = grid[cell2.row][cell2.col];
+                grid[cell2.row][cell2.col] = temp2;
+                renderBoard();
+                isProcessing = false;
+                return;
+            }
+
+            moves--;
+            updateUI();
+            comboCount = 0;
+
+            await processMatches();
+            isProcessing = false;
+
+            checkGameState();
+        }
+
+        function findMatches() {
+            const matches = new Set();
+
+            // Check horizontal matches
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE - 2; col++) {
+                    const type = grid[row][col]?.type;
+                    if (type && grid[row][col+1]?.type === type && grid[row][col+2]?.type === type) {
+                        let length = 3;
+                        while (col + length < GRID_SIZE && grid[row][col + length]?.type === type) {
+                            length++;
+                        }
+                        for (let i = 0; i < length; i++) {
+                            matches.add(`${row},${col + i}`);
+                        }
+                    }
+                }
+            }
+
+            // Check vertical matches
+            for (let col = 0; col < GRID_SIZE; col++) {
+                for (let row = 0; row < GRID_SIZE - 2; row++) {
+                    const type = grid[row][col]?.type;
+                    if (type && grid[row+1]?.[col]?.type === type && grid[row+2]?.[col]?.type === type) {
+                        let length = 3;
+                        while (row + length < GRID_SIZE && grid[row + length]?.[col]?.type === type) {
+                            length++;
+                        }
+                        for (let i = 0; i < length; i++) {
+                            matches.add(`${row + i},${col}`);
+                        }
+                    }
+                }
+            }
+
+            return Array.from(matches).map(m => {
+                const [row, col] = m.split(',').map(Number);
+                return { row, col };
+            });
+        }
+
+        async function processMatches() {
+            let matches = findMatches();
+            while (matches.length > 0) {
+                comboCount++;
+                const matchGroups = groupMatches(matches);
+
+                // Handle special gems
+                for (const group of matchGroups) {
+                    if (group.length >= 5) {
+                        const center = group[Math.floor(group.length / 2)];
+                        grid[center.row][center.col].isRainbow = true;
+                    } else if (group.length >= 4) {
+                        const center = group[Math.floor(group.length / 2)];
+                        grid[center.row][center.col].isBomb = true;
+                    }
+                }
+
+                // Calculate score
+                const baseScore = matches.length * 10;
+                const comboBonus = Math.min(comboCount * 5, 25);
+                const groupBonus = matchGroups.length * 5;
+                score += baseScore + comboBonus + groupBonus;
+
+                if (comboCount > 1) {
+                    showComboText(comboCount);
+                }
+
+                // Animate matched cells
+                const cells = document.querySelectorAll('.cell');
+                matches.forEach(m => {
+                    const index = m.row * GRID_SIZE + m.col;
+                    cells[index]?.classList.add('matched');
+                });
+
+                await delay(300);
+
+                // Remove matched gems
+                matches.forEach(m => {
+                    grid[m.row][m.col] = null;
+                });
+
+                renderBoard();
+                updateUI();
+
+                // Drop gems
+                await dropGems();
+
+                // Fill empty spaces
+                await fillEmptySpaces();
+
+                // Check for new matches
+                matches = findMatches();
+            }
+        }
+
+        function groupMatches(matches) {
+            const groups = [];
+            const visited = new Set();
+
+            for (const match of matches) {
+                const key = `${match.row},${match.col}`;
+                if (visited.has(key)) continue;
+
+                const group = [];
+                const type = grid[match.row]?.[match.col]?.type;
+                if (!type) continue;
+
+                const queue = [match];
+                while (queue.length > 0) {
+                    const current = queue.shift();
+                    const currentKey = `${current.row},${current.col}`;
+                    if (visited.has(currentKey)) continue;
+                    if (!matches.some(m => m.row === current.row && m.col === current.col)) continue;
+                    if (grid[current.row]?.[current.col]?.type !== type) continue;
+
+                    visited.add(currentKey);
+                    group.push(current);
+
+                    // Check neighbors
+                    const neighbors = [
+                        { row: current.row - 1, col: current.col },
+                        { row: current.row + 1, col: current.col },
+                        { row: current.row, col: current.col - 1 },
+                        { row: current.row, col: current.col + 1 }
+                    ];
+                    for (const n of neighbors) {
+                        if (n.row >= 0 && n.row < GRID_SIZE && n.col >= 0 && n.col < GRID_SIZE) {
+                            queue.push(n);
+                        }
+                    }
+                }
+
+                if (group.length > 0) groups.push(group);
+            }
+
+            return groups;
+        }
+
+        async function dropGems() {
+            let dropped = false;
+            for (let col = 0; col < GRID_SIZE; col++) {
+                for (let row = GRID_SIZE - 1; row >= 0; row--) {
+                    if (grid[row][col] === null) {
+                        // Find gem above
+                        for (let above = row - 1; above >= 0; above--) {
+                            if (grid[above][col] !== null) {
+                                grid[row][col] = grid[above][col];
+                                grid[above][col] = null;
+                                dropped = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (dropped) {
+                renderBoard();
+                document.querySelectorAll('.cell').forEach(cell => {
+                    cell.classList.add('falling');
+                });
+                await delay(400);
+            }
+        }
+
+        async function fillEmptySpaces() {
+            let filled = false;
+            for (let col = 0; col < GRID_SIZE; col++) {
+                for (let row = 0; row < GRID_SIZE; row++) {
+                    if (grid[row][col] === null) {
+                        grid[row][col] = {
+                            type: GEM_TYPES[Math.floor(Math.random() * GEM_TYPES.length)],
+                            isBomb: false,
+                            isRainbow: false
+                        };
+                        filled = true;
+                    }
+                }
+            }
+
+            if (filled) {
+                renderBoard();
+                document.querySelectorAll('.cell').forEach(cell => {
+                    cell.classList.add('new');
+                });
+                await delay(300);
+            }
+        }
+
+        function showComboText(combo) {
+            const text = document.createElement('div');
+            text.className = 'combo-text';
+            text.textContent = `${combo}连消! +${combo * 10}`;
+            text.style.left = '50%';
+            text.style.top = '50%';
+            text.style.transform = 'translate(-50%, -50%)';
+            document.body.appendChild(text);
+            setTimeout(() => text.remove(), 1000);
+        }
+
+        function checkGameState() {
+            if (score >= target) {
+                showModal('🎉 过关啦！', `恭喜进入第 ${level + 1} 关！`, true);
+            } else if (moves <= 0) {
+                showModal('😢 游戏结束', `最终得分: ${score}`, false);
+            }
+        }
+
+        function showModal(title, text, isWin) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-text').textContent = text;
+            document.getElementById('modal-btn').textContent = isWin ? '下一关' : '重新开始';
+            document.getElementById('modal-btn').onclick = isWin ? nextLevel : restartGame;
+            document.getElementById('modal').classList.add('show');
+        }
+
+        function nextLevel() {
+            level++;
+            target += TARGET_INCREMENT;
+            moves = INITIAL_MOVES;
+            document.getElementById('modal').classList.remove('show');
+            createGrid();
+            updateUI();
+            renderBoard();
+        }
+
+        function restartGame() {
+            document.getElementById('modal').classList.remove('show');
+            init();
+        }
+
+        function showHint() {
+            if (isProcessing || moves <= 0) return;
+
+            // Find a possible move
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    const neighbors = [
+                        { row: row - 1, col },
+                        { row: row + 1, col },
+                        { row, col: col - 1 },
+                        { row, col: col + 1 }
+                    ].filter(n => n.row >= 0 && n.row < GRID_SIZE && n.col >= 0 && n.col < GRID_SIZE);
+
+                    for (const neighbor of neighbors) {
+                        // Try swap
+                        const temp = grid[row][col];
+                        grid[row][col] = grid[neighbor.row][neighbor.col];
+                        grid[neighbor.row][neighbor.col] = temp;
+
+                        if (findMatches().length > 0) {
+                            // Found a move, highlight it
+                            highlightCell(row, col, true);
+                            highlightCell(neighbor.row, neighbor.col, true);
+                            setTimeout(() => {
+                                highlightCell(row, col, false);
+                                highlightCell(neighbor.row, neighbor.col, false);
+                            }, 1000);
+
+                            // Swap back
+                            grid[neighbor.row][neighbor.col] = grid[row][col];
+                            grid[row][col] = temp;
+                            return;
+                        }
+
+                        // Swap back
+                        grid[neighbor.row][neighbor.col] = grid[row][col];
+                        grid[row][col] = temp;
+                    }
+                }
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('level').textContent = level;
+            document.getElementById('moves').textContent = moves;
+            document.getElementById('score').textContent = score;
+            document.getElementById('target').textContent = target;
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Initialize game
+        init();
+    </script>
+</body>
+</html>
