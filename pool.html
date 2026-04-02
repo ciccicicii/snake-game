@@ -170,9 +170,10 @@
         }
         
         /* 手机横屏模式 */
-        @media (orientation: landscape) and (max-height: 500px) {
+        @media (orientation: landscape) and (max-height: 600px) {
             body {
                 padding: 5px;
+                justify-content: center;
             }
             
             h1 {
@@ -199,6 +200,11 @@
                 width: 150px;
                 height: 12px;
                 margin-top: 5px;
+            }
+            
+            #gameCanvas {
+                max-width: calc(100vw - 20px);
+                max-height: calc(100vh - 80px);
             }
         }
         
@@ -231,6 +237,8 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.5);
             cursor: crosshair;
             touch-action: none;
+            display: block;
+            margin: 0 auto;
         }
         
         .tips {
