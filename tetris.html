@@ -149,6 +149,50 @@
             font-size: 24px;
             margin-bottom: 30px;
         }
+        
+        /* 手机控制按钮 */
+        .mobile-controls {
+            display: none;
+            margin-top: 15px;
+            gap: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-controls {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+        
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+            font-size: 24px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .control-btn:active {
+            background: rgba(74, 222, 128, 0.4);
+            transform: scale(0.95);
+        }
+        
+        .control-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+        
+        .control-btn.empty {
+            visibility: hidden;
+        }
     </style>
 </head>
 <body>
@@ -181,7 +225,21 @@
     
     <div class="controls">
         <p>← → 移动 | ↓ 加速 | ↑ 旋转 | 空格 硬降</p>
-        <p>手机：点击屏幕左/右侧移动，点击中间旋转，向下滑动加速</p>
+        <p>手机：使用下方按钮控制</p>
+    </div>
+    
+    <!-- 手机控制按钮 -->
+    <div class="mobile-controls">
+        <div class="control-row">
+            <button class="control-btn empty"></button>
+            <button class="control-btn" onclick="rotatePiece()">↻</button>
+            <button class="control-btn empty"></button>
+        </div>
+        <div class="control-row">
+            <button class="control-btn" onclick="movePiece(-1)">←</button>
+            <button class="control-btn" onclick="dropPiece()">↓</button>
+            <button class="control-btn" onclick="movePiece(1)">→</button>
+        </div>
     </div>
     
     <div class="game-over" id="gameOver">
@@ -449,6 +507,25 @@
             }
         }
         
+        // 手机按钮调用的函数
+        function movePiece(dir) {
+            if (!gameRunning) return;
+            move(dir);
+            draw();
+        }
+        
+        function dropPiece() {
+            if (!gameRunning) return;
+            drop();
+            draw();
+        }
+        
+        function rotatePiece() {
+            if (!gameRunning) return;
+            rotate();
+            draw();
+        }
+        
         // 软降
         function drop() {
             if (!collide(currentPiece, 0, 1)) {
@@ -474,15 +551,16 @@
             clearLines();
             document.getElementById('score').textContent = score;
             
-            // 检查游戏结束
+            // 生成下一个方块
+            currentPiece = nextPiece;
+            nextPiece = randomPiece();
+            
+            // 检查游戏结束（在生成新方块后检查）
             if (collide(currentPiece, 0, 0)) {
                 gameOver();
                 return;
             }
             
-            // 下一个方块
-            currentPiece = nextPiece;
-            nextPiece = randomPiece();
             drawNext();
         }
         

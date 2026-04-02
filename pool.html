@@ -381,7 +381,7 @@
         const MIN_VELOCITY = 0.08;
         
         function getTableMargin() { return canvas.width * 0.08; }
-        function getPocketRadius() { return canvas.width * 0.07; }
+        function getPocketRadius() { return canvas.width * 0.04; }
         
         // 球颜色
         const BALL_COLORS = {
@@ -977,7 +977,7 @@
         }
         
         function placeCueBall(x, y) {
-            const margin = TABLE_MARGIN + BALL_RADIUS;
+            const margin = getTableMargin() + BALL_RADIUS;
             
             x = Math.max(margin, Math.min(canvas.width - margin, x));
             y = Math.max(margin, Math.min(canvas.height - margin, y));
