@@ -377,9 +377,9 @@
         const ctx = canvas.getContext('2d');
         
         // 配置
-        const TABLE_MARGIN = 20;
-        const POCKET_RADIUS = 22;
-        let BALL_RADIUS = 11;
+        const TABLE_MARGIN = 15;
+        const POCKET_RADIUS = 14;
+        let BALL_RADIUS = 8;
         const FRICTION = 0.978;
         const MIN_VELOCITY = 0.08;
         
@@ -408,50 +408,39 @@
         function resize() {
             const isLandscape = window.innerWidth > window.innerHeight;
             
+            // 始终保持竖桌（宽 < 高），适应各种屏幕
             if (isLandscape) {
-                // 横屏模式 - 更大的画布
-                canvas.width = window.innerWidth - 40;
-                canvas.height = window.innerHeight * 0.7;
+                // 横屏模式 - 画布靠左，竖向放置
+                canvas.height = window.innerHeight * 0.75;
+                canvas.width = canvas.height * 0.5; // 竖桌 0.5:1
                 
-                // 保持比例
-                if (canvas.width / canvas.height > 2) {
-                    canvas.width = canvas.height * 2;
-                } else {
-                    canvas.height = canvas.width / 2;
-                }
-                
-                // 横屏时球更大
-                BALL_RADIUS = Math.min(14, canvas.width / 40);
+                // 球大小
+                BALL_RADIUS = Math.min(10, canvas.height / 35);
             } else {
-                // 竖屏模式
-                const maxW = Math.min(window.innerWidth - 20, 800);
-                const maxH = window.innerHeight * 0.5;
+                // 竖屏模式 - 竖桌
+                const maxH = window.innerHeight * 0.55;
+                const maxW = window.innerWidth - 20;
                 
-                if (maxW / maxH > 2) {
-                    canvas.height = maxH;
-                    canvas.width = maxH * 2;
-                } else {
-                    canvas.width = maxW;
-                    canvas.height = maxW / 2;
-                }
+                canvas.height = Math.min(maxH, maxW * 2);
+                canvas.width = canvas.height * 0.5;
                 
-                // 竖屏时球稍小
-                BALL_RADIUS = Math.min(10, canvas.width / 50);
+                // 球稍小
+                BALL_RADIUS = Math.min(8, canvas.width / 45);
             }
         }
         
         resize();
         window.addEventListener('resize', resize);
         
-        // 球袋位置
+        // 球袋位置 - 竖桌
         function getPockets() {
-            const m = 15;
+            const m = 12;
             return [
                 { x: m, y: m },
-                { x: canvas.width / 2, y: m - 5 },
+                { x: canvas.width / 2, y: m - 3 },
                 { x: canvas.width - m, y: m },
                 { x: m, y: canvas.height - m },
-                { x: canvas.width / 2, y: canvas.height - m + 5 },
+                { x: canvas.width / 2, y: canvas.height - m + 3 },
                 { x: canvas.width - m, y: canvas.height - m }
             ];
         }
@@ -597,20 +586,22 @@
         function initBalls() {
             balls = [];
             
-            cueBall = new Ball(canvas.width * 0.25, canvas.height / 2, 0);
+            // 竖桌：白球在下，球堆在上
+            cueBall = new Ball(canvas.width / 2, canvas.height * 0.8, 0);
             balls.push(cueBall);
             
-            const startX = canvas.width * 0.7;
-            const startY = canvas.height / 2;
+            const startX = canvas.width / 2;
+            const startY = canvas.height * 0.25;
             const gap = BALL_RADIUS * 2.1;
             
             const order = [1, 9, 2, 10, 8, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15];
             let idx = 0;
             
+            // 竖向三角形
             for (let row = 0; row < 5; row++) {
                 for (let col = 0; col <= row; col++) {
-                    const x = startX + row * gap * 0.866;
-                    const y = startY + (col - row / 2) * gap;
+                    const x = startX + (col - row / 2) * gap;
+                    const y = startY + row * gap * 0.866;
                     balls.push(new Ball(x, y, order[idx]));
                     idx++;
                 }
@@ -681,9 +672,10 @@
             ctx.strokeStyle = 'rgba(255,255,255,0.12)';
             ctx.lineWidth = 1;
             ctx.setLineDash([6, 6]);
+            // 竖桌：开球线在下方1/4处
             ctx.beginPath();
-            ctx.moveTo(canvas.width * 0.25, innerMargin + 5);
-            ctx.lineTo(canvas.width * 0.25, canvas.height - innerMargin - 5);
+            ctx.moveTo(innerMargin + 5, canvas.height * 0.75);
+            ctx.lineTo(canvas.width - innerMargin - 5, canvas.height * 0.75);
             ctx.stroke();
             ctx.setLineDash([]);
             
